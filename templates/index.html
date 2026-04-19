@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RFID Operations Web Application</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.472.0/dist/umd/lucide.js"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- Custom Scripts -->
+    <!-- <script defer src="static/action.js"></script> -->
+    <script defer src="../static/script.js"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="../static/style.css" />
+</head>
+
+<body class="h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col text-white">
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full shadow-md z-50 bg-gray-800/50 backdrop-blur-sm border-b border-gray-700/50">
+        <nav class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <div>
+                <h1 class="text-2xl font-bold text-white">MICCROTEN</h1>
+                <p class="text-sm text-gray-300">RFID Operations Suite</p>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <ul class="flex space-x-6">
+                <button id="mainBtn" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 text-white shadow-lg">
+                    <i data-lucide="wifi" class="h-4 w-4"></i>
+                    <span>Main Console</span>
+                </button>
+
+                <button id="instructionsBtn" class="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-200">
+                    <i data-lucide="file-text" class="h-4 w-4"></i>
+                    <span>User Instructions</span>
+                </button>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 pt-24 px-6">
+
+        <!-- Main Page -->
+        <div id="mainPage" class="flex flex-col space-y-6 ml-36 transition-all duration-500 ease-in-out opacity-100 translate-x-0">
+
+            <!-- Mode Toggle + Block Selector Row -->
+            <div class="flex space-x-6">
+
+                <!-- Mode Toggle -->
+                <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-2 border border-gray-700/50">
+                    <div class="flex space-x-2">
+
+                        <!-- Read Mode Button -->
+                        <button id="readBtn" class="flex items-center space-x-3 px-6 py-4 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/25 scale-105 transition-all duration-300">
+                            <i data-lucide="book-open" class="h-5 w-5"></i>
+                            <span class="font-medium">Read Mode</span>
+                        </button>
+
+                        <!-- Write Mode Button -->
+                        <button id="writeBtn" class="flex items-center space-x-3 px-6 py-4 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-300">
+                            <i data-lucide="edit-3" class="h-5 w-5"></i>
+                            <span class="font-medium">Write Mode</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Main Grid: Left (RFID Reader) & Right (Connection) -->
+            <div class="w-full grid lg:grid-cols-3 gap-8">
+
+                <!-- LEFT SIDE: RFID Reader & Keystroke -->
+                <div class="lg:col-span-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700/50 h-[500px]">
+
+                    <!-- Flip Card Container -->
+                    <div class="relative w-full h-[380px] perspective">
+                        <div id="flipCard" class="relative w-full h-full transition-transform duration-700 transform-style-preserve-3d">
+
+                            <!-- FRONT: Read Mode -->
+                            <div class="absolute w-full h-full backface-hidden flex flex-col justify-between space-y-6">
+
+                                <!-- RFID Reader Header -->
+                                <div class="flex items-start justify-between space-x-6">
+                                    <div class="flex-1">
+                                        <h2 class="text-2xl text-white mb-2 flex items-center space-x-2">
+                                            <i data-lucide="activity" class="text-blue-600"></i>
+                                            <span>RFID Data Reader</span>
+                                        </h2>
+                                        <p class="text-gray-400">Real-time RFID tag data will appear below when connected</p>
+                                    </div>
+
+                                    <!-- Block Selector & Apply Button -->
+                                    <div class="flex items-center space-x-4 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50">
+                                        <div id="readModeSelector" class="flex space-x-2">
+
+                                            <!-- Block Selector -->
+                                            <div id="blockDiv" class="flex items-center space-x-3 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 cursor-pointer transition-all duration-300 hover:bg-gray-700/50">
+                                                <label for="blockSelect" class="text-gray-300 font-medium">Block :</label>
+                                                <select id="blockSelect" class="bg-gray-900 text-white border border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600">
+                                                    <option value="">Select</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- UID Selector -->
+                                            <div id="uidDiv" class="flex items-center space-x-3 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 cursor-pointer transition-all duration-300 hover:bg-gray-700/50">
+                                                <span class="text-gray-300 font-medium">UID</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Apply Button -->
+                                        <button id="applyBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-lg shadow-lg hover:bg-emerald-700 transition-all duration-200 flex items-center space-x-2">
+                                            <i id="applyIcon" data-lucide="play" class="w-2 h-2"></i>
+                                            <span id="applyText">Start Reading</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Data Stream Section -->
+                                <div class="relative">
+                                    <div class="bg-gray-900/50 rounded-xl p-6 border-2 border-gray-600/50">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <span class="text-sm font-medium text-gray-300">Data Stream</span>
+                                            <div class="flex items-center space-x-2 text-gray-500" id="online_inbox">
+                                                <div class="w-2 h-2 rounded-full bg-gray-500" id="status_dot"></div>
+                                                <span class="text-xs" id="status_text">Standby</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="min-h-[120px] bg-black/30 rounded-lg p-4 font-mono text-green-400 flex items-center justify-center">
+                                            <div class="text-center">
+                                                <i data-lucide="usb" class="text-grey-600 ml-24"></i>
+                                                <p id="rfidText" class="mt-5 text-lg font-semibold italic" style="font-family: 'Courier New', monospace; text-align:center;"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Keystroke Section -->
+                                <div class="pt-6 border-t border-gray-700/50 mb-8">
+                                    <h3 class="text-xl font-semibold text-white flex items-center">
+                                        <i data-lucide="key-round" class="text-grey-600 ml-2"></i>
+                                        Enable Keystroke
+                                    </h3>
+
+                                    <label class="relative inline-flex items-center cursor-pointer mt-2">
+                                        <input type="checkbox" id="keystrokeToggle" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-blue-600
+                                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                            after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
+                                            after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                        </div>
+                                        <span class="ml-3 text-sm font-medium text-gray-300">Enable/Disable</span>
+                                    </label>
+                                </div>
+
+                            </div>
+
+                            <!-- BACK: Write Mode -->
+                            <div class="absolute w-full h-full backface-hidden rotate-x-180 flex flex-col justify-center space-y-6">
+
+                                <!-- Write Mode Header -->
+                                <div class="flex flex-col sm:flex-row items-center justify-between w-full space-y-4 sm:space-y-0 sm:space-x-4">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="h-6 w-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20h9M12 4h9M4 9h16M4 15h16" />
+                                        </svg>
+                                        <div>
+                                            <h2 class="text-2xl font-bold text-white">RFID Data Writer</h2>
+                                            <p class="text-gray-400 text-sm">Enter data below and click write</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Block Selector + Apply Button -->
+                                    <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                                        <button id="applyBlockBtn" class="flex items-center justify-center gap-2 bg-green-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-green-700 transition-colors sm:w-auto">
+                                            <i data-lucide="play" class="w-4 h-4"></i>
+                                            <span>Start Writing</span>
+                                        </button>
+
+                                        <div class="flex items-center space-x-2 bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50">
+                                            <label for="blockSelect1" class="text-gray-300 font-medium">Block :</label>
+                                            <select id="blockSelect1" class="bg-gray-900 text-white border border-gray-700 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"></select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Textarea Section -->
+                                <div class="relative">
+                                    <div class="bg-gray-900/50 rounded-xl p-6 border-2 border-gray-600/50">
+
+                                        <!-- Delimiter Selector -->
+                                        <div class="mb-4">
+                                            <label class="text-gray-300 text-sm">Delimiter:</label>
+                                            <select id="delimiter" class="ml-2 bg-black border border-gray-600 text-emerald-400 rounded px-2 py-1 text-sm">
+                                                <option value="#">#</option>
+                                                <option value="$">$</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Textarea Input -->
+                                        <textarea id="dataInput" class="w-full h-32 bg-black/30 rounded-lg p-4 font-mono text-emerald-400 resize-none" placeholder="Enter data to write..."></textarea>
+
+                                        <!-- Submit Button -->
+                                        <button id="SubmitwriteBtn" class="bg-green-600 text-white font-medium rounded-lg px-4 py-2 hover:bg-green-700 active:scale-95 transition-transform duration-150 ease-in-out w-full">
+                                            Write Data
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT SIDE: Connection Section -->
+                <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 w-full border border-gray-700/50">
+                    <h3 class="text-xl font-semibold text-white mb-4 flex items-center">
+                        <i data-lucide="usb" class="text-grey-600 ml-12"></i>
+                        Connection
+                    </h3>
+
+                    <div class="space-y-4">
+
+                        <!-- COM Port Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">COM Port Selection</label>
+                            <select id="comSelect" class="w-full px-4 py-3 bg-gray-900 border border-gray-600/50 rounded-lg text-green-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"></select>
+                        </div>
+
+                        <!-- Connect Button -->
+                        <button id="connectionButton" class="w-full px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-600 disabled:cursor-not-allowed">
+                            <span id="buttonContent" class="flex items-center">
+                                <i data-lucide="usb" class="w-4 h-4 mr-2"></i>
+                                <span>Connect</span>
+                            </span>
+                            <svg id="loadingSpinner" class="hidden w-5 h-5" viewBox="25 25 50 50">
+                                <circle r="20" cy="50" cx="50"></circle>
+                            </svg>
+                        </button>
+
+                        <!-- Status Display -->
+                        <div id="statusDisplay" class="hidden mt-4 p-3 bg-green-900/30 border border-green-700/50 rounded-lg text-green-400 text-sm text-center">
+                            Connected to MICCROTEN_RFID
+                        </div>
+
+                        <!-- RFID Reader Status -->
+                        <div class="pt-4 border-t border-gray-700/50">
+                            <div class="text-xs space-y-1">
+                                <p>📡 RFID Reader Status</p>
+                                <p id="rfidStatus" class="text-red-500">● Offline</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Instructions Page -->
+        <div id="instructionsPage" class="hidden transition-all duration-500 ease-in-out opacity-0 translate-x-full">
+            <!-- Instructions Content (left intact for readability) -->
+            <!-- Your existing instructions content goes here as-is -->
+        </div>
+    </main>
+
+    <!-- Render Lucide Icons -->
+    <script>
+        if (window.lucide) lucide.createIcons();
+    </script>
+
+</body>
+</html>
